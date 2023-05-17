@@ -4,8 +4,7 @@ on: [push, workflow_dispatch]
 
 jobs:
   esp32-test:
-    runs-on: ubuntu-latest
-    container: espressif/idf:latest
+    runs-on: macos-latest
 
     strategy:
       fail-fast: false
@@ -18,26 +17,51 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install esp-idf
+      run: |
+        brew install cmake ninja dfu-util
+        mkdir -p ~/esp
+        cd ~/esp
+        git clone --recursive https://github.com/espressif/esp-idf.git
+        cd ~/esp/esp-idf
+        ./install.sh esp32
+
+    - name: Install qemu
+      run: |
+        git clone -b esp-develop-20220919 https://github.com/espressif/qemu.git
+        cd qemu
+        ./configure --target-list=xtensa-softmmu \
+                    --enable-gcrypt \
+                    --enable-debug --enable-sanitizers \
+                    --disable-strip --disable-user \
+                    --disable-capstone --disable-vnc \
+                    --disable-sdl --disable-gtk
+        make -j8
+        make install
+        cd ..
+        rm -rf qemu
+
+    - name: Build using idf.py
+      run: |
+        set -e
+        . $HOME/esp/esp-idf/export.sh
+        idf.py build
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
 
     - name: Install pytest and pytest-embedded plugins
       run: |
         set -e
-        . $IDF_PATH/export.sh
         pip install pytest==7.0.1 \
             pytest-embedded==1.2.5 \
             pytest-embedded-serial-esp==1.2.5 \
             pytest-embedded-idf==1.2.5 \
             pytest-embedded-qemu==1.2.5
 
-    - name: Build using idf.py
-      run: |
-        set -e
-        . $IDF_PATH/export.sh
-        idf.py build
-
     - name: Run test using qemu
       timeout-minutes: 10
       run: |
         set -e
-        . $IDF_PATH/export.sh
         pytest --embedded-services=idf,qemu -s

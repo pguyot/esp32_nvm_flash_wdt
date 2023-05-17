@@ -29,9 +29,9 @@ jobs:
     - name: Install qemu binary from espressif/qemu
       run: |
         set -eu
-        QEMU_VER=esp-develop-20220919
-        QEMU_DIST=qemu-${QEMU_VER}.tar.bz2
-        QEMU_SHA256=f6565d3f0d1e463a63a7f81aec94cce62df662bd42fc7606de4b4418ed55f870
+        QEMU_VER=esp-develop-7.2.0-20230223
+        QEMU_DIST=esp-qemu-xtensa-softmmu-develop_7.2.0_20230223-x86_64-linux-gnu.tar.bz2
+        QEMU_SHA256=7ac441ddbc0435350cc02266ede63fb5d3da37acc70ae61c293c7c3c9ba4636f
         wget --no-verbose https://github.com/espressif/qemu/releases/download/${QEMU_VER}/${QEMU_DIST}
         echo "${QEMU_SHA256} *${QEMU_DIST}" | sha256sum --check --strict -
         tar -xf ${QEMU_DIST} -C /opt

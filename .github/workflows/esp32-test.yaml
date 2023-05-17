@@ -5,7 +5,7 @@ on: [push, workflow_dispatch]
 jobs:
   esp32-test:
     runs-on: ubuntu-latest
-    container: espressif/idf:v4.4.4
+    container: espressif/idf:latest
 
     strategy:
       fail-fast: false
@@ -18,23 +18,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
-    - name: Install dependencies to run qemu
-      run: |
-        set -eu
-        apt update
-        DEBIAN_FRONTEND=noninteractive apt install -y -q \
-            libglib2.0-0 libpixman-1-0
-
-    - name: Install qemu binary from espressif/qemu
-      run: |
-        set -eu
-        QEMU_VER=esp-develop-20220919
-        QEMU_DIST=qemu-${QEMU_VER}.tar.bz2
-        QEMU_SHA256=f6565d3f0d1e463a63a7f81aec94cce62df662bd42fc7606de4b4418ed55f870
-        wget --no-verbose https://github.com/espressif/qemu/releases/download/${QEMU_VER}/${QEMU_DIST}
-        echo "${QEMU_SHA256} *${QEMU_DIST}" | sha256sum --check --strict -
-        tar -xf ${QEMU_DIST} -C /opt
 
     - name: Install pytest and pytest-embedded plugins
       run: |
@@ -57,5 +40,4 @@ jobs:
       run: |
         set -e
         . $IDF_PATH/export.sh
-        export PATH=/opt/qemu/bin:${PATH}
         pytest --embedded-services=idf,qemu -s

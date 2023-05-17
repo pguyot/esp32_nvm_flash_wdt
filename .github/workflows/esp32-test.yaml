@@ -58,4 +58,4 @@ jobs:
         set -e
         . $IDF_PATH/export.sh
         export PATH=/opt/qemu/bin:${PATH}
-        pytest --embedded-services=idf,qemu -s
+        pytest --embedded-services=idf,qemu --erase-nvs=y -s

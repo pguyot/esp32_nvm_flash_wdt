@@ -24,7 +24,7 @@ jobs:
         set -eu
         apt update
         DEBIAN_FRONTEND=noninteractive apt install -y -q \
-            libglib2.0-0 libpixman-1-0
+            libglib2.0-0 libpixman-1-0 libslirp0
 
     - name: Install qemu binary from espressif/qemu
       run: |

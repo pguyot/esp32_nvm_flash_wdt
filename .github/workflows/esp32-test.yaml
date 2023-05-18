@@ -52,6 +52,12 @@ jobs:
         . $IDF_PATH/export.sh
         idf.py build
 
+    - name: Upload the elf artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: esp32-nvs_flash_init-wdt-${{ matrix.flappiness }}.elf
+        path: build/esp32-nvs_flash_init-wdt.elf
+
     - name: Run test using qemu
       timeout-minutes: 10
       run: |

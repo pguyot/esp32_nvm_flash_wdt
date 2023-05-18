@@ -46,6 +46,13 @@ jobs:
             pytest-embedded-idf==1.2.5 \
             pytest-embedded-qemu==1.2.5
 
+    - name: Patch esp-idf to fix race condition
+      run: |
+        set -e
+        PATCH=$PWD/esp_ipc_isr.patch
+        cd $IDF_PATH
+        patch -p1 < $PATCH
+
     - name: Build using idf.py
       run: |
         set -e

@@ -1,0 +1,64 @@
+diff --git a/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr.c b/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr.c
+index dbdbe9027b..4d1a1184c4 100644
+--- a/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr.c
++++ b/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr.c
+@@ -57,7 +57,7 @@ typedef enum {
+ #define IPC_ISR_EXIT_CRITICAL()  portEXIT_CRITICAL_SAFE(&s_ipc_isr_mux)
+ 
+ static void esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* arg, esp_ipc_isr_wait_t wait_for);
+-
++static void IRAM_ATTR esp_ipc_isr_wait_for_end();
+ 
+ /* Initializing IPC_ISR */
+ 
+@@ -132,6 +132,8 @@ void IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
+             esp_ipc_isr_finish_cmd = 1;
+             IPC_ISR_EXIT_CRITICAL();
+             portCLEAR_INTERRUPT_MASK_FROM_ISR(s_stored_interrupt_level);
++            // Make sure end flag is cleared and esp_ipc_isr_waiting_for_finish_cmd is done.
++            esp_ipc_isr_wait_for_end();
+         } else if (s_count_of_nested_calls[cpu_id] < 0) {
+             assert(0);
+         }
+@@ -200,4 +202,9 @@ static void IRAM_ATTR esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* a
+     }
+ }
+ 
++static void IRAM_ATTR esp_ipc_isr_wait_for_end()
++{
++    while (!esp_ipc_isr_end_fl) {};
++}
++
+ /* End private functions*/
+diff --git a/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr_handler.S b/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr_handler.S
+index 0fb4ae676a..20638a6895 100644
+--- a/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr_handler.S
++++ b/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr_handler.S
+@@ -96,6 +96,7 @@ esp_ipc_isr_handler:
+ 
+     /* set the start flag */
+     movi    a0, esp_ipc_isr_start_fl
++    memw
+     s32i    a0, a0, 0
+ 
+     /* Call the esp_ipc_function(void* arg) */
+@@ -113,6 +114,7 @@ esp_ipc_isr_handler:
+ 
+     /* set the end flag */
+     movi    a0, esp_ipc_isr_end_fl
++    memw
+     s32i    a0, a0, 0
+ 
+     /* restore a0 */
+diff --git a/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr_routines.S b/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr_routines.S
+index 01ddf8b528..e947c3ed2f 100644
+--- a/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr_routines.S
++++ b/components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr_routines.S
+@@ -23,6 +23,7 @@
+ esp_ipc_isr_waiting_for_finish_cmd:
+     /* waiting for the finish command */
+ .check_finish_cmd:
++    memw
+     l32i    a3, a2, 0
+     beqz    a3, .check_finish_cmd
+     ret

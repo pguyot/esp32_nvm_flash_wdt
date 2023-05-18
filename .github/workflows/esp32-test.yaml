@@ -46,6 +46,13 @@ jobs:
             pytest-embedded-idf==1.2.5 \
             pytest-embedded-qemu==1.2.5
 
+    - name: Patch esp-idf to disable DPORT WORKAROUND
+      run: |
+        set -e
+        PATCH=$PWD/dport_access.h.diff
+        cd $IDF_PATH
+        patch -p1 < $PATCH
+
     - name: Build using idf.py
       run: |
         set -e

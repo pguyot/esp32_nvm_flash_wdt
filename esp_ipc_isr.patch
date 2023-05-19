@@ -13,10 +13,10 @@ index dbdbe9027b..4d1a1184c4 100644
  
 @@ -132,6 +132,8 @@ void IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
              esp_ipc_isr_finish_cmd = 1;
-             IPC_ISR_EXIT_CRITICAL();
-             portCLEAR_INTERRUPT_MASK_FROM_ISR(s_stored_interrupt_level);
 +            // Make sure end flag is cleared and esp_ipc_isr_waiting_for_finish_cmd is done.
 +            esp_ipc_isr_wait_for_end();
+             IPC_ISR_EXIT_CRITICAL();
+             portCLEAR_INTERRUPT_MASK_FROM_ISR(s_stored_interrupt_level);
          } else if (s_count_of_nested_calls[cpu_id] < 0) {
              assert(0);
          }
